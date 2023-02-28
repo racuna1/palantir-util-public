@@ -12,13 +12,23 @@ __copyright__ = "Copyright 2023"
 import csv
 import os
 import random
+import yaml
 
 FOLDER_DATA_ORIGINAL = "data_original"
 FOLDER_DATA_PROCESSED = "data_processed"
 
 
-def process(path_gradebook, gradescope_metadata):
-    path_gradebook_clean = FOLDER_DATA_PROCESSED + os.sep + "ser222_22sc_gradebook_clean.csv"
+def process(filename_gradebook, filename_gradescope_metadata):
+    path_gradebook = FOLDER_DATA_ORIGINAL + os.sep + filename_gradebook
+    gradescope_metadata = FOLDER_DATA_ORIGINAL + os.sep + filename_gradescope_metadata
+
+    path_gradebook_clean = FOLDER_DATA_PROCESSED + os.sep + filename_gradebook[:-4] + "_anonymized.csv"
+    gradescope_metadata_clean = FOLDER_DATA_PROCESSED + os.sep + filename_gradescope_metadata[:-4] + "_anonymized.yml"
+
+    output_paths = [path_gradebook_clean]
+
+    if not os.path.exists(FOLDER_DATA_PROCESSED):
+        os.makedirs(FOLDER_DATA_PROCESSED)
 
     # find number of students
     student_count = 0
@@ -64,16 +74,51 @@ def process(path_gradebook, gradescope_metadata):
 
                 writer.writerow(row)
 
-        if os.path.exists(gradescope_metadata):
-            # TODO: process Gradescope file
-            pass
+            # TODO: randomize rows
 
-        pass
+        # process Gradescope file (if exists)
+        withdrawn_students = 0
+
+        if os.path.exists(gradescope_metadata):
+
+            with open(gradescope_metadata) as file_input_gradescope:
+                submissions = yaml.load(file_input_gradescope, Loader=yaml.FullLoader)
+                submissions_updated = dict()
+
+                for key in submissions.keys():
+                    current = submissions[key]
+                    if len(current[":submitters"]) != 1:
+                        raise Exception(f"Unexpected number of submitters in {key}.")
+
+                    for result in current[":history"]:
+                        if len(result[":submitters"]) != 0:
+                            raise Exception(f"Unexpected number of submitters in {key}'s :history ({result}).")
+
+                    sid = current[":submitters"][0][":sid"]  # will be str
+
+                    # mask in place
+                    current[":submitters"][0][":name"] = "anon"
+                    current[":submitters"][0][":email"] = "anon@anon.com"
+
+                    #  is student still in gradebook? if so,there is a mapping. otherwise, we need to add a one.
+                    if sid not in mapping:
+                        mapping[sid] = str(10000 + withdrawn_students)  # all five digit students withdrew.
+                        withdrawn_students += 1
+
+                        current[":submitters"][0][":sid"] = mapping[sid]
+
+                    # build new dict with masked keys
+                    new_key = "submission_" + mapping[sid]
+                    submissions_updated[new_key] = current
+
+                with open(gradescope_metadata_clean, 'w') as file_submissions_updated:
+                    yaml.dump(submissions_updated, file_submissions_updated)
+                    output_paths += [gradescope_metadata_clean]
+
+        return output_paths
 
 
 if __name__ == "__main__":
 
-    path_gradebook = FOLDER_DATA_ORIGINAL + os.sep + "ser222_22sc_gradebook.csv"
-    gradescope_metadata = FOLDER_DATA_ORIGINAL + os.sep + "ser222_22sc_m1_submission_metadata.yml"
-
-    process(path_gradebook, gradescope_metadata)
+    # inputs must be in a sub-folder called data_original. updated files will be saved to data_original.
+    process("ser222_22sc_gradebook.csv", "ser222_22sc_m1_submission_metadata.yml")
