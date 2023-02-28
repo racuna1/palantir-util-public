@@ -63,6 +63,7 @@ def process(filename_gradebook, filename_gradescope_metadata):
                 line = next(reader)
                 writer.writerow(line)
 
+            all_rows = []
             for row in reader:
                 # mask Student, ID, IS Login ID
                 row["Student"] = "anon"
@@ -72,9 +73,13 @@ def process(filename_gradebook, filename_gradescope_metadata):
                 # update SIS User ID
                 row["SIS User ID"] = mapping[row["SIS User ID"]]
 
-                writer.writerow(row)
+                all_rows += [row]
 
-            # TODO: randomize rows
+            # randomize rows
+            random.shuffle(all_rows)
+
+            for row in all_rows:
+                writer.writerow(row)
 
         # process Gradescope file (if exists)
         withdrawn_students = 0
