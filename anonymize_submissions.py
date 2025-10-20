@@ -19,12 +19,9 @@ FOLDER_DATA_ORIGINAL = "data_original"
 FOLDER_DATA_PROCESSED = "data_processed"
 
 
-def process(filename_gradebook, filename_gradescope_metadata):
+def process(filename_gradebook, filenames_submissions_gs):
     path_gradebook = FOLDER_DATA_ORIGINAL + os.sep + filename_gradebook
-    gradescope_metadata = FOLDER_DATA_ORIGINAL + os.sep + filename_gradescope_metadata
-
     path_gradebook_clean = FOLDER_DATA_PROCESSED + os.sep + filename_gradebook[:-4] + "_anonymized.csv"
-    metadata_processed = FOLDER_DATA_PROCESSED + os.sep + filename_gradescope_metadata[:-4] + "_anonymized.yml"
 
     output_paths = [path_gradebook_clean]
 
@@ -82,10 +79,14 @@ def process(filename_gradebook, filename_gradescope_metadata):
             for row in all_rows:
                 writer.writerow(row)
 
-        # process Gradescope file (if exists)
-        if os.path.exists(gradescope_metadata):
-            anonymize_submission_gs(gradescope_metadata, metadata_processed, map_ids)
-            output_paths += [metadata_processed]
+        # process gradescope files
+        for filename_gs_data in filenames_submissions_gs:
+            filepath_gs_data = FOLDER_DATA_ORIGINAL + os.sep + filename_gs_data
+
+            if os.path.exists(filepath_gs_data):
+                filepath_gs_processed = FOLDER_DATA_PROCESSED + os.sep + filename_gs_data[:-4] + "_anonymized.yml"
+                anonymize_submission_gs(filepath_gs_data, filepath_gs_processed, map_ids)
+                output_paths += [filepath_gs_processed]
 
         return output_paths
 
@@ -123,4 +124,8 @@ def anonymize_submission_gs(filename_input: str, filename_output: str, mapping: 
 if __name__ == "__main__":
 
     # inputs must be in a sub-folder called data_original. updated files will be saved to data_original.
-    process("ser222_22sc_gradebook.csv", "ser222_22sc_m1_submission_metadata.yml")
+    #process("ser222_22sc_gradebook.csv", ["ser222_22sc_m1_submission_metadata.yml"])
+
+    #input: consent results, gradebook, roster, protocol, gradescope data, submissions (?)
+    #staff filter
+    process("ser222_25sc_ground_gradebook.csv", [])
