@@ -13,21 +13,45 @@ import csv
 import os
 import random
 import yaml
-from typing import Any
 
 FOLDER_DATA_ORIGINAL = "data_original"
 FOLDER_DATA_PROCESSED = "data_processed"
 
 
-def process(filename_gradebook, filenames_submissions_gs):
-    path_gradebook = FOLDER_DATA_ORIGINAL + os.sep + filename_gradebook
-    path_gradebook_clean = FOLDER_DATA_PROCESSED + os.sep + filename_gradebook[:-4] + "_anonymized.csv"
-
-    output_paths = [path_gradebook_clean]
-
+def process(filename_gradebook:str, filenames_submissions_gs):
     if not os.path.exists(FOLDER_DATA_PROCESSED):
         os.makedirs(FOLDER_DATA_PROCESSED)
 
+    # generate global anonymized IDs (protocol dependent) for gradebook (assumed to exist)
+    path_gradebook = FOLDER_DATA_ORIGINAL + os.sep + filename_gradebook
+    map_ids = generate_id_map(path_gradebook)
+
+    # process gradebook
+    path_gradebook_clean = FOLDER_DATA_PROCESSED + os.sep + filename_gradebook[:-4] + "_anonymized.csv"
+    output_paths = [path_gradebook_clean]
+    anonymize_gradebook(path_gradebook, path_gradebook_clean, map_ids)
+
+    # process gradescope files
+    for filename_gs_data in filenames_submissions_gs:
+        path_gs_data = FOLDER_DATA_ORIGINAL + os.sep + filename_gs_data
+
+        if os.path.exists(path_gs_data):
+            filepath_gs_processed = FOLDER_DATA_PROCESSED + os.sep + filename_gs_data[:-4] + "_anonymized.yml"
+            anonymize_submission_gs(path_gs_data, filepath_gs_processed, map_ids)
+            output_paths += [filepath_gs_processed]
+
+    return output_paths
+
+
+def generate_id_map(path_gradebook: str) -> dict[int, int]:
+    """
+    Generates an int to int map from original gradebook IDs to randomly
+    generated four-digit IDs. Used for protocols performing global (rather than
+    local) anonymization that preserve the same anonymized ID across multiple
+    items. Mapping is stored only in memory and never saved to storage.
+    :param path_gradebook: input gradebook.
+    :return: dictionary that maps original to anonymized IDs.
+    """
     # find number of students
     student_count = 0
     student_ids = []
@@ -43,12 +67,15 @@ def process(filename_gradebook, filenames_submissions_gs):
             student_ids.append(row["SIS User ID"])
             student_count += 1
 
-    # generate lookup table of original to masked IDs
+    # generate lookup table of original to anonymized IDs
     masked_ids = [x for x in random.sample(range(1000, 10000), student_count)]
     map_ids = dict()
     for i, id in enumerate(student_ids):
         map_ids[str(id)] = masked_ids[i]
+    return map_ids
 
+
+def anonymize_gradebook(path_gradebook:str, path_gradebook_clean: str, map_ids: dict[int, int]):
     with open(path_gradebook) as input_csv:
         reader = csv.DictReader(input_csv)
 
@@ -78,17 +105,6 @@ def process(filename_gradebook, filenames_submissions_gs):
 
             for row in all_rows:
                 writer.writerow(row)
-
-        # process gradescope files
-        for filename_gs_data in filenames_submissions_gs:
-            filepath_gs_data = FOLDER_DATA_ORIGINAL + os.sep + filename_gs_data
-
-            if os.path.exists(filepath_gs_data):
-                filepath_gs_processed = FOLDER_DATA_PROCESSED + os.sep + filename_gs_data[:-4] + "_anonymized.yml"
-                anonymize_submission_gs(filepath_gs_data, filepath_gs_processed, map_ids)
-                output_paths += [filepath_gs_processed]
-
-        return output_paths
 
 
 def anonymize_submission_gs(filename_input: str, filename_output: str, mapping: dict[int, int]):
@@ -126,6 +142,6 @@ if __name__ == "__main__":
     # inputs must be in a sub-folder called data_original. updated files will be saved to data_original.
     #process("ser222_22sc_gradebook.csv", ["ser222_22sc_m1_submission_metadata.yml"])
 
-    #input: consent results, gradebook, roster, protocol, gradescope data, submissions (?)
-    #staff filter
+    #input: TODO consent results, gradebook, TODO roster, TODO protocol, gradescope data, TODO submissions (?)
+    #TODO: staff filter
     process("ser222_25sc_ground_gradebook.csv", [])
