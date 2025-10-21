@@ -38,3 +38,38 @@ def anonymize_roster(path_roster: str, path_roster_clean: str, map_ids: dict[int
 
             for row in all_rows:
                 writer.writerow(row)
+
+
+def anonymize_gradebook(path_gradebook:str, path_gradebook_clean: str, map_ids: dict[int, int]):
+    with open(path_gradebook) as input_csv:
+        reader = csv.DictReader(input_csv)
+
+        # create anonymized file
+        with open(path_gradebook_clean, 'w', newline="") as output_csv:
+            writer = csv.DictWriter(output_csv, fieldnames=reader.fieldnames)
+            writer.writeheader()
+
+            for i in range(2):
+                line = next(reader)
+                writer.writerow(line)
+
+            all_rows = []
+            for row in reader:
+                if "Student, Test" in row["Student"]:
+                    continue
+
+                # mask Student, ID, IS Login ID
+                row["Student"] = "anon"
+                row["ID"] = str(123456789)
+                row["SIS Login ID"] = "anon"
+
+                # update SIS User ID
+                row["SIS User ID"] = map_ids[int(row["SIS User ID"])]
+
+                all_rows += [row]
+
+            # randomize rows
+            random.shuffle(all_rows)
+
+            for row in all_rows:
+                writer.writerow(row)
