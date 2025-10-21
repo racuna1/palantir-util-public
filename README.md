@@ -2,3 +2,4 @@ This is a collection of scripts that perform data preprocessing on Canvas or Gra
 
 Contents:
 * anonymize_submissions.py: This file removes identifying information from a Canvas roster export and associated Gradescope metadata. 
+* synthesize.py: This file contains functionality to synthetically generate course data.
