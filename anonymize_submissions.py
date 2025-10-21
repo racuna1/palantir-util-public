@@ -14,11 +14,13 @@ import os
 import random
 import yaml
 
+from anonymize_metadata import anonymize_roster
+
 FOLDER_DATA_ORIGINAL = "data_original"
 FOLDER_DATA_PROCESSED = "data_processed"
 
 
-def process(filename_gradebook:str, filenames_submissions_gs):
+def process(filename_gradebook: str, filename_roster: str, filenames_submissions_gs: list[str]):
     if not os.path.exists(FOLDER_DATA_PROCESSED):
         os.makedirs(FOLDER_DATA_PROCESSED)
 
@@ -26,6 +28,11 @@ def process(filename_gradebook:str, filenames_submissions_gs):
     path_gradebook = FOLDER_DATA_ORIGINAL + os.sep + filename_gradebook
     map_ids = generate_id_map(path_gradebook)
 
+    # process roster
+    path_roster = FOLDER_DATA_ORIGINAL + os.sep + filename_roster
+    path_roster_clean = FOLDER_DATA_PROCESSED + os.sep + filename_roster[:-4] + "_anonymized.csv"
+    anonymize_roster(path_roster, path_roster_clean, map_ids)
+    return
     # process gradebook
     path_gradebook_clean = FOLDER_DATA_PROCESSED + os.sep + filename_gradebook[:-4] + "_anonymized.csv"
     output_paths = [path_gradebook_clean]
@@ -64,6 +71,9 @@ def generate_id_map(path_gradebook: str) -> dict[int, int]:
         next(reader)  # dummy line
 
         for row in reader:
+            if "Student, Test" in row["Student"]:
+                continue
+
             student_ids.append(row["SIS User ID"])
             student_count += 1
 
@@ -71,7 +81,7 @@ def generate_id_map(path_gradebook: str) -> dict[int, int]:
     masked_ids = [x for x in random.sample(range(1000, 10000), student_count)]
     map_ids = dict()
     for i, id in enumerate(student_ids):
-        map_ids[str(id)] = masked_ids[i]
+        map_ids[int(id)] = masked_ids[i]
     return map_ids
 
 
@@ -79,7 +89,7 @@ def anonymize_gradebook(path_gradebook:str, path_gradebook_clean: str, map_ids: 
     with open(path_gradebook) as input_csv:
         reader = csv.DictReader(input_csv)
 
-        # create modified file
+        # create anonymized file
         with open(path_gradebook_clean, 'w', newline="") as output_csv:
             writer = csv.DictWriter(output_csv, fieldnames=reader.fieldnames)
             writer.writeheader()
@@ -144,4 +154,4 @@ if __name__ == "__main__":
 
     #input: TODO consent results, gradebook, TODO roster, TODO protocol, gradescope data, TODO submissions (?)
     #TODO: staff filter
-    process("ser222_25sc_ground_gradebook.csv", [])
+    process("ser222_25sc_ground_gradebook.csv", "ser222_25sc_ground_roster.csv", [])
