@@ -3,7 +3,7 @@ __copyright__ = "Copyright 2023-25"
 
 import yaml
 
-def anonymize_submission_gs(filename_input: str, filename_output: str, mapping: dict[int, int]):
+def anonymize_gs_yaml(filename_input: str, filename_output: str, mapping: dict[int, int]):
     with open(filename_input) as file_input:
         submissions = yaml.load(file_input, Loader=yaml.FullLoader)
         submissions_updated = dict()
