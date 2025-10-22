@@ -4,6 +4,7 @@ __copyright__ = "Copyright 2025"
 import csv
 import random
 
+
 def anonymize_roster(path_roster: str, path_roster_clean: str, map_ids: dict[int, int]):
     with open(path_roster) as input_csv:
         reader = csv.DictReader(input_csv)
@@ -33,7 +34,6 @@ def anonymize_roster(path_roster: str, path_roster_clean: str, map_ids: dict[int
 
                 all_rows.append(row_anon)
 
-            # randomize rows
             random.shuffle(all_rows)
 
             for row in all_rows:

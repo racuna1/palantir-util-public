@@ -9,7 +9,8 @@ from datetime import date, timedelta
 from faker import Faker
 from typing import Any
 
-from synthesize import FOLDER_DATA_ORIGINAL
+from constants import FOLDER_DATA_ORIGINAL
+from synthesize_util import sample_distribution
 
 
 def generate_roster(path_roster, n):
