@@ -2,7 +2,6 @@ __author__ = "Ruben Acuna"
 __copyright__ = "Copyright 2025"
 
 import csv
-import random
 
 import pandas as pd
 
@@ -42,6 +41,7 @@ def anonymize_roster(path_roster: str, path_roster_clean: str, map_ids: dict[int
                 row_anon["First Name"] = "Anon"
                 row_anon["Last Name"] = "Anon" + str(id_str)
                 row_anon["ASURITE"] = "aanon" + str(id_str)
+                row_anon["Zoom Email"] = row_anon["ASURITE"] + "@anon.com"
 
                 rows.append(row_anon)
 
@@ -81,7 +81,7 @@ def anonymize_gradebook(path_gradebook:str, path_gradebook_clean: str, map_ids: 
                 if real_id not in consented:
                     continue
 
-                # mask Student, ID, IS Login ID. align with anonymized roster data.
+                # mask Student, ID, IS Login ID. align with anonymized roster.
                 anonymized_id = map_ids[real_id]
                 df_row = df_roster[df_roster['ID'] == anonymized_id].iloc[0]
                 row["Student"] = f"{df_row["Last Name"]}, {df_row["First Name"]}"

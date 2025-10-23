@@ -15,6 +15,10 @@ populated with a random four-digit number, and the order of the rows randomized.
 fields will be masked: name, sid, email. The sid will be replaced with the same random numbers used to mask the Canvas
 gradebook.
 
+Unsupported data:
+* Gradescope Short Answer Submissions
+* Gradescope Programming Source Code
+
 """
 __author__ = "Ruben Acuna"
 __copyright__ = "Copyright 2023-25"
@@ -24,11 +28,11 @@ import os
 import random
 
 from anonymize_metadata import anonymize_roster, anonymize_gradebook
-from anonymize_submissions import anonymize_gs_yaml
+from anonymize_submissions import anonymize_gs_prog_yaml
 from constants import FOLDER_DATA_PROCESSED, FOLDER_DATA_ORIGINAL
 
 
-def process(filename_gradebook: str, filename_roster: str, filename_consent: str, filenames_submissions_gs: list[str], local_anonymization: bool):
+def process(filename_gradebook: str, filename_roster: str, filename_consent: str, filenames_gs_prog: list[str], local_anonymization: bool):
     if not os.path.exists(FOLDER_DATA_PROCESSED):
         os.makedirs(FOLDER_DATA_PROCESSED)
 
@@ -47,23 +51,26 @@ def process(filename_gradebook: str, filename_roster: str, filename_consent: str
 
     # process gradebook
     path_gradebook_clean = FOLDER_DATA_PROCESSED + os.sep + filename_gradebook[:-4] + "_anonymized.csv"
-    output_paths = [path_gradebook_clean]
+    #output_paths = [path_gradebook_clean]
     if local_anonymization: # regenerate the map so IDs are newly random
         map_ids = generate_id_map(path_gradebook)
+
     anonymize_gradebook(path_gradebook, path_gradebook_clean, map_ids, consented, df_roster)
 
     # process gradescope files
-    # TODO: filter students who have not consented
-    # TODO: align masked data to new roster
-    for filename_gs_data in filenames_submissions_gs:
-        path_gs_data = FOLDER_DATA_ORIGINAL + os.sep + filename_gs_data
+    if local_anonymization: # regenerate the map so IDs are newly random
+        map_ids = generate_id_map(path_gradebook)
 
-        if os.path.exists(path_gs_data):
-            filepath_gs_processed = FOLDER_DATA_PROCESSED + os.sep + filename_gs_data[:-4] + "_anonymized.yml"
-            anonymize_gs_yaml(path_gs_data, filepath_gs_processed, map_ids)
-            output_paths += [filepath_gs_processed]
+    for filename_gs_prog_zip in filenames_gs_prog:
+        path_gs_prog_zip = FOLDER_DATA_ORIGINAL + os.sep + filename_gs_prog_zip
 
-    return output_paths
+        if os.path.exists(path_gs_prog_zip):
+            prefix = FOLDER_DATA_PROCESSED + os.sep + filename_gs_prog_zip[:-4]
+            filepath_gs_prog_processed = prefix + "metadata_anonymized.yml"
+            anonymize_gs_prog_yaml(path_gs_prog_zip, filepath_gs_prog_processed, map_ids, consented, df_roster)
+            #output_paths += [filepath_gs_prog_processed]
+
+    #return output_paths
 
 
 def generate_id_map(path_gradebook: str) -> dict[int, int]:
@@ -172,9 +179,8 @@ if __name__ == "__main__":
     #process("ser222_22sc_gradebook.csv", ["ser222_22sc_m1_submission_metadata.yml"])
 
     #input: consent results, gradebook, roster, protocol, gradescope data, TODO submissions (?)
-    #TODO: staff filter
     process("ser222_25sc_ground_gradebook.csv",
             "ser222_25sc_ground_roster.csv",
             "ser222_25sc_ground_consentform.csv",
-            [],
+            ["ser222_25sc_ground_m1_prog.zip", "ser222_25sc_ground_m2_prog.zip"],
             False)
