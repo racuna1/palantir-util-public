@@ -51,9 +51,9 @@ def anonymize_roster(path_roster: str, path_roster_clean: str, map_ids: dict[int
             for row in rows:
                 writer.writerow(row)
 
-    # save DataFrame
-    df = pd.DataFrame(rows)
-    df.to_pickle(path_roster_clean_pkl)
+        # save DataFrame
+        df = pd.DataFrame(rows)
+        df.to_pickle(path_roster_clean_pkl)
 
     return df
 
@@ -61,6 +61,8 @@ def anonymize_gradebook(path_gradebook:str, path_gradebook_clean: str, map_ids: 
                         df_roster: pd.DataFrame):
     with open(path_gradebook) as input_csv:
         reader = csv.DictReader(input_csv)
+
+        path_gradebook_clean_pkl = path_gradebook_clean[:-4] + "_anonymized.pkl"
 
         # create anonymized file
         with open(path_gradebook_clean, 'w', newline="") as output_csv:
@@ -96,3 +98,7 @@ def anonymize_gradebook(path_gradebook:str, path_gradebook_clean: str, map_ids: 
 
             for row in rows:
                 writer.writerow(row)
+
+            # save DataFrame
+            df = pd.DataFrame(rows)
+            df.to_pickle(path_gradebook_clean_pkl)
