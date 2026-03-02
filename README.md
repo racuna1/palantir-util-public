@@ -11,7 +11,6 @@ Data:
 
 Contents:
 * anonymize.py: This file removes identifying information from a roster, gradebook, and Gradescope programming submissions. Also filters data based on a consent form.
-* synthesize.py: This file contains functionality to synthetically generate course data (roster). Data is intended to closely match the natural data export formats so that it can be used by any other tools.
 
 ## Authors
 * Ruben Acuña
