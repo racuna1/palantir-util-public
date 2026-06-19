@@ -51,7 +51,6 @@ def process(filename_gradebook: str, filename_roster: str, filename_consent: str
 
     # process gradebook
     path_gradebook_clean = FOLDER_DATA_PROCESSED + os.sep + filename_gradebook[:-4] + "_anonymized.csv"
-    #output_paths = [path_gradebook_clean]
     if local_anonymization: # regenerate the map so IDs are newly random
         map_ids = generate_id_map(path_gradebook)
 
@@ -68,9 +67,6 @@ def process(filename_gradebook: str, filename_roster: str, filename_consent: str
             prefix = FOLDER_DATA_PROCESSED + os.sep + filename_gs_prog_zip[:-4]
             filepath_gs_prog_processed = prefix + "metadata_anonymized.yml"
             anonymize_gs_prog_yaml(path_gs_prog_zip, filepath_gs_prog_processed, map_ids, consented, df_roster)
-            #output_paths += [filepath_gs_prog_processed]
-
-    #return output_paths
 
 
 def generate_id_map(path_gradebook: str) -> dict[int, int]:

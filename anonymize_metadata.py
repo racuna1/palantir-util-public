@@ -86,7 +86,7 @@ def anonymize_gradebook(path_gradebook:str, path_gradebook_clean: str, map_ids: 
                 # mask Student, ID, IS Login ID. align with anonymized roster.
                 anonymized_id = map_ids[real_id]
                 df_row = df_roster[df_roster['ID'] == anonymized_id].iloc[0]
-                row["Student"] = f"{df_row["Last Name"]}, {df_row["First Name"]}"
+                row["Student"] = f"{df_row['Last Name']}, {df_row['First Name']}"
                 row["ID"] = str(123456)
                 row["SIS Login ID"] = df_row["ASURITE"]
                 row["SIS User ID"] = anonymized_id
