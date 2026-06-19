@@ -17,11 +17,11 @@ gradebook.
 
 Unsupported data:
 * Gradescope Short Answer Submissions
-* Gradescope Programming Source Code
+* Gradescope Programming Source Code (final only)
 
 """
 __author__ = "Ruben Acuna"
-__copyright__ = "Copyright 2023-25"
+__copyright__ = "Copyright 2023-26"
 
 import csv
 import os
@@ -65,7 +65,7 @@ def process(filename_gradebook: str, filename_roster: str, filename_consent: str
 
         if os.path.exists(path_gs_prog_zip):
             prefix = FOLDER_DATA_PROCESSED + os.sep + filename_gs_prog_zip[:-4]
-            filepath_gs_prog_processed = prefix + "metadata_anonymized.yml"
+            filepath_gs_prog_processed = prefix + "metadata_anonymized"
             anonymize_gs_prog_yaml(path_gs_prog_zip, filepath_gs_prog_processed, map_ids, consented, df_roster)
 
 
@@ -180,3 +180,10 @@ if __name__ == "__main__":
             "ser222_25sc_ground_consentform.csv",
             ["ser222_25sc_ground_m1_prog.zip", "ser222_25sc_ground_m2_prog.zip"],
             False)
+
+    #input: consent results, gradebook, roster, protocol, gradescope data, TODO submissions (?)
+    #process("ser222_25fa_online_gradebook.csv",
+    #        "ser222_25fa_online_roster.csv",
+    #        "ser222_25fa_online_consentform.csv",
+    #        ["ser222_25fa_online_m1_prog.zip", "ser222_25fa_online_m2_prog.zip"],
+    #        False)
