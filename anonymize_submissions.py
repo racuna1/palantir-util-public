@@ -22,7 +22,6 @@ def anonymize_gs_prog_yaml(filename_input_zip: str, filename_output: str, map_id
         #submission_roots = [x for x in all_files if len(x) == 47 and x[-1] == "/"]
 
         with gs_export.open(filename_input) as file_input, zipfile.ZipFile(filename_output + ".zip", 'w', compression=zipfile.ZIP_DEFLATED) as zip_output:
-            #TODO: filter and store source code.
             submissions = yaml.load(file_input, Loader=yaml.CLoader)
             anonymized = dict()
 
@@ -64,10 +63,27 @@ def anonymize_gs_prog_yaml(filename_input_zip: str, filename_output: str, map_id
                 # map each file into the new ZIP
                 for submission_file in submission_files:
                     with gs_export.open(submission_file) as file_submission:
-                        file_data = file_submission.read()
                         base_name = submission_file[47:]
                         submission_renamed = f"assignment_0000000_export/{new_key}/{base_name}"
-                        zip_output.writestr(submission_renamed, file_data)
+
+                        # if a submission file is Java, mask out the author field.
+                        if submission_file.endswith(".java"):
+                            file_text = file_submission.read().decode("utf‑8")
+
+                            processed_lines = []
+                            for line in file_text.splitlines(keepends=True):
+                                if "@author" in line:
+                                    start_idx = line.find("@author")
+                                    eol = line[len(line.rstrip("\r\n")):] # find the line ending for preservation
+                                    processed_lines.append(f"{line[:start_idx]}@author MASKED{eol}")
+                                else:
+                                    processed_lines.append(line)
+
+                            zip_output.writestr(submission_renamed, "".join(processed_lines))
+                        else:
+                            print("anonymize_gs_prog_yaml: WARNING encountered unknown file type when copying contents of GS ZIP.")
+                            file_data = file_submission.read()
+                            zip_output.writestr(submission_renamed, file_data)
 
             # modern versions of python preserve insert order. need to shuffle
             anonymized_keys = list(anonymized.keys())
