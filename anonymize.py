@@ -27,12 +27,13 @@ import csv
 import os
 import random
 
-from anonymize_metadata import anonymize_roster, anonymize_gradebook
+from anonymize_metadata import anonymize_roster, anonymize_gradebook, sanitize_quiz
 from anonymize_submissions import anonymize_gs_prog_yaml
 from constants import FOLDER_DATA_PROCESSED, FOLDER_DATA_ORIGINAL
 
 
-def process(filename_gradebook: str, filename_roster: str, filename_consent: str, filenames_gs_prog: list[str], local_anonymization: bool):
+def process(filename_gradebook: str, filename_roster: str, filename_consent: str, filenames_quiz: list[str],
+            filenames_gs_prog: list[str], local_anonymization: bool):
     if not os.path.exists(FOLDER_DATA_PROCESSED):
         os.makedirs(FOLDER_DATA_PROCESSED)
 
@@ -55,6 +56,18 @@ def process(filename_gradebook: str, filename_roster: str, filename_consent: str
         map_ids = generate_id_map(path_gradebook)
 
     anonymize_gradebook(path_gradebook, path_gradebook_clean, map_ids, consented, df_roster)
+
+    #process quizzes
+    if local_anonymization: # regenerate the map so IDs are newly random
+        map_ids = generate_id_map(path_gradebook)
+
+    for filenames_quiz_csv in filenames_quiz:
+        path_quiz_csv = FOLDER_DATA_ORIGINAL + os.sep + filenames_quiz_csv
+
+        if os.path.exists(path_quiz_csv):
+            prefix = FOLDER_DATA_PROCESSED + os.sep + filenames_quiz_csv[:-4]
+            filepath_quiz_processed = prefix + "_anonymized.csv"
+            sanitize_quiz(path_quiz_csv, filepath_quiz_processed, map_ids, consented, df_roster)
 
     # process gradescope files
     if local_anonymization: # regenerate the map so IDs are newly random
@@ -140,7 +153,6 @@ def find_consented(path_consentform):
             elif q_bool:
                 if q_name.lower() == lms_name.lower():
                     consent = True
-                    #any(chunk in target for chunk in chunks)
                 elif any([x for x in lms_name.split() if x in q_name]):
                     consent = True
                 else: # disagreement
@@ -172,16 +184,16 @@ def find_key(substr: str, strings: str) -> str:
 if __name__ == "__main__":
 
     # inputs must be in a sub-folder called data_original. updated files will be saved to data_original.
-    #process("ser222_22sc_gradebook.csv", ["ser222_22sc_m1_submission_metadata.yml"])
 
-    #input: consent results, gradebook, roster, protocol, gradescope data, TODO submissions (?)
+    #input: consent results, gradebook, roster, protocol, quizzes, gradescope data (YAML and final src)
     process("ser222_25sc_ground_gradebook.csv",
             "ser222_25sc_ground_roster.csv",
             "ser222_25sc_ground_consentform.csv",
+            ["ser222_25sc_ground_m0_prereqcheck.csv"],
             ["ser222_25sc_ground_m1_prog.zip", "ser222_25sc_ground_m2_prog.zip"],
             False)
 
-    #input: consent results, gradebook, roster, protocol, gradescope data, TODO submissions (?)
+    #input: consent results, gradebook, roster, protocol, quizzes, gradescope data (YAML and final src)
     #process("ser222_25fa_online_gradebook.csv",
     #        "ser222_25fa_online_roster.csv",
     #        "ser222_25fa_online_consentform.csv",

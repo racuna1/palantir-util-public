@@ -1,5 +1,5 @@
 __author__ = "Ruben Acuna"
-__copyright__ = "Copyright 2025"
+__copyright__ = "Copyright 2025-26"
 
 import csv
 
@@ -62,7 +62,7 @@ def anonymize_gradebook(path_gradebook:str, path_gradebook_clean: str, map_ids: 
     with open(path_gradebook) as input_csv:
         reader = csv.DictReader(input_csv)
 
-        path_gradebook_clean_pkl = path_gradebook_clean[:-4] + "_anonymized.pkl"
+        path_gradebook_clean_pkl = path_gradebook_clean[:-4] + ".pkl"
 
         # create anonymized file
         with open(path_gradebook_clean, 'w', newline="") as output_csv:
@@ -102,3 +102,72 @@ def anonymize_gradebook(path_gradebook:str, path_gradebook_clean: str, map_ids: 
             # save DataFrame
             df = pd.DataFrame(rows)
             df.to_pickle(path_gradebook_clean_pkl)
+
+
+def sanitize_quiz(path_quiz:str, path_quiz_clean:str, map_ids: dict[int, int], consented: list[int],
+                  df_roster: pd.DataFrame):
+
+    with open(path_quiz, encoding='utf-8') as input_csv:
+        reader = csv.reader(input_csv)
+
+        headers = next(reader)
+
+        # create anonymized and consented file
+        with open(path_quiz_clean, 'w', encoding='utf-8', newline="") as output_csv:
+            writer = csv.writer(output_csv)
+            writer.writerow(headers)
+
+            #verify default columns. Based on Canvas Standard Quizzes (6/12/26).
+            expected_columns = ["name", "id", "sis_id", "root_account", "section", "section_id", "section_sis_id",
+                                "submitted", "attempt"]
+            for i, item in enumerate(expected_columns):
+                if headers[i] != item:
+                    raise Exception(f"sanitize_quiz: Could not find column {item} at expected position {i}.")
+
+            # process rows
+            rows = []
+            for row in reader:
+                name = row[0]
+                id = row[1]
+                sis_id = row[2]
+                root_account = row[3]
+                section = row[4]
+                section_id = row[5]
+                section_sis_id = row[6]
+                submitted = row[7]
+                attempt = row[8]
+
+                # process only rows for students who consented
+                real_id = int(sis_id)
+                if real_id not in consented:
+                    continue
+
+                # by default, all data is removed.
+                row_anon = []
+
+                # anonymize identity information
+                anonymized_id = map_ids[int(sis_id)]
+                df_row = df_roster[df_roster['ID'] == anonymized_id].iloc[0]
+                row_anon.append(f"{df_row['First Name']} {df_row['Last Name']}")
+                row_anon.append("000000") #ID
+                row_anon.append(anonymized_id)
+
+                # explicitly maintain some columns
+                row_anon.append(root_account)
+                row_anon.append(section)
+                row_anon.append(section_id)
+                row_anon.append(section_sis_id)
+                row_anon.append(submitted)
+                row_anon.append(attempt)
+
+                # data rows
+                remaining = row[9:]
+                row_anon.extend(remaining)
+
+                rows.append(row_anon)
+
+            # randomize rows (works since last name includes a random number)
+            rows = sorted(rows, key=lambda row: row[0])
+
+            for row in rows:
+                writer.writerow(row)
